@@ -57,41 +57,20 @@ fulladder(SD, COMP, OBS) :-
         out(a2) <=> in1(r1), out(a1) <=> in2(r1) ], 
   COMP = [a1, a2, x1, x2, r1],
   OBS = [in1(fa), ~in2(fa), carryin(fa), out(fa), ~carryout(fa)]. %1+1=1?
-
   
-intersection([], _, []).
-intersection(_, [],[]).
-intersection([F|Fs], M, Res) :-
-  member(F, M),
-  intersection(Fs, M, R1),!,
-  append(R1, [F], Res).  
-intersection([_|Fs], M, Res) :-
-  intersection(Fs, M, Res).
-  
-  
-emptyIntersectingLists([], _, []).
-emptyIntersectingLists([S|Ss], H, Res) :-
-  emptyIntersectingLists(Ss, H, R1),
-  intersection(S, H, []),!,
-  append(R1, [S], Res).
-emptyIntersectingLists([_|Ss], H, Res) :-
-  !,emptyIntersectingLists(Ss, H, Res).
-
-  
-makeHittingChildren([], _, _, []).
-makeHittingChildren([R|Rs], PHS, F, Res) :-
-  makeHittingChildren(Rs, PHS, F, R1),
+makeHittingChildren([], _, _, _, _, []).
+makeHittingChildren([R|Rs], PHS, SD, Comp, OBS, Res) :-
+  makeHittingChildren(Rs, PHS, SD, Comp, OBS, R1),
   append(PHS, [R], NewHS),
-  makeHittingTree(F, NewHS, NewNode),
+  makeHittingTree(SD, Comp, OBS, NewHS, NewNode),
   append(R1, [edge(NewNode, R)], Res).
   
-makeHittingTree([], _, node([], tick, [])).
-makeHittingTree(F, PHS, Tree) :-
-  emptyIntersectingLists(F, PHS, [Label|_]),
-  makeHittingChildren(Label, PHS, F, Children),
+makeHittingTree([], _, _, _, node([], tick, [])).
+makeHittingTree(SD, Comp, OBS, PHS, Tree) :-
+  tp(SD, Comp, OBS, PHS, Label),!,
+  makeHittingChildren(Label, PHS, SD, Comp, OBS, Children),
   Tree = node(Children, Label, PHS).
-makeHittingTree(F, PHS, Tree) :-
-  emptyIntersectingLists(F, PHS, []),
+makeHittingTree(_, _, _, PHS, Tree) :-
   Tree = node([], tick, PHS).
  
 gatherEdges([], []).
@@ -121,6 +100,5 @@ gatherMinimalDiagnoses(Tree, Diagnoses) :-
   filter_supsets(D2, Diagnoses).
   
 diagnoses(SD, Comp, OBS, Diagnoses) :-
-  tp(SD, Comp, OBS, [], CS),
-  makeHittingTree(CS, [], Tree),
+  makeHittingTree(SD, Comp, OBS, [], Tree),
   gatherMinimalDiagnoses(Tree, Diagnoses).
