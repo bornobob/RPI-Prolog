@@ -1,4 +1,7 @@
 :- [tp].
+:- use_module(library(pairs)).
+
+
 
 % Definition of logical gates, used in the examples below.
 and_gate(all X:(and(X) , ~ab(X) => (in1(X), in2(X) <=> out(X)))).
@@ -55,3 +58,69 @@ fulladder(SD, COMP, OBS) :-
   COMP = [a1, a2, x1, x2, r1],
   OBS = [in1(fa), ~in2(fa), carryin(fa), out(fa), ~carryout(fa)]. %1+1=1?
 
+  
+intersection([], _, []).
+intersection(_, [],[]).
+intersection([F|Fs], M, Res) :-
+  member(F, M),
+  intersection(Fs, M, R1),!,
+  append(R1, [F], Res).  
+intersection([_|Fs], M, Res) :-
+  intersection(Fs, M, Res).
+  
+  
+emptyIntersectingLists([], _, []).
+emptyIntersectingLists([S|Ss], H, Res) :-
+  emptyIntersectingLists(Ss, H, R1),
+  intersection(S, H, []),!,
+  append(R1, [S], Res).
+emptyIntersectingLists([_|Ss], H, Res) :-
+  !,emptyIntersectingLists(Ss, H, Res).
+
+  
+makeHittingChildren([], _, _, []).
+makeHittingChildren([R|Rs], PHS, F, Res) :-
+  makeHittingChildren(Rs, PHS, F, R1),
+  append(PHS, [R], NewHS),
+  makeHittingTree(F, NewHS, NewNode),
+  append(R1, [edge(NewNode, R)], Res).
+  
+makeHittingTree([], _, node([], tick, [])).
+makeHittingTree(F, PHS, Tree) :-
+  emptyIntersectingLists(F, PHS, [Label|_]),
+  makeHittingChildren(Label, PHS, F, Children),
+  Tree = node(Children, Label, PHS).
+makeHittingTree(F, PHS, Tree) :-
+  emptyIntersectingLists(F, PHS, []),
+  Tree = node([], tick, PHS).
+ 
+gatherEdges([], []).
+gatherEdges([edge(E, _)|Es], Diagnoses) :-
+  gatherEdges(Es, OtherDiagnoses),
+  gatherDiagnoses(E, ThisDiagnoses),!,
+  append(OtherDiagnoses, ThisDiagnoses, Diagnoses).
+  
+gatherDiagnoses(node(_, tick, Diagnoses), [Diagnoses]).
+gatherDiagnoses(node(EdgyList, _, _), Diagnoses) :-
+  gatherEdges(EdgyList, Diagnoses).
+  
+sort_list_by_length(List, Res) :-
+  map_list_to_pairs(length, List, ListLengthPairs),
+  keysort(ListLengthPairs, SortedPairs),
+  pairs_values(SortedPairs, Res).
+  
+filter_supsets([], []).
+filter_supsets([S|Ss], Res) :-
+  (select(X, Ss, S1), ord_subset(S, X) -> filter_supsets([S|S1], Res)
+  ;Res = [S|S2], filter_supsets(Ss, S2)).
+
+gatherMinimalDiagnoses(Tree, Diagnoses) :-
+  gatherDiagnoses(Tree, D),
+  sort_list_by_length(D, D1),
+  maplist(sort, D1, D2),
+  filter_supsets(D2, Diagnoses).
+  
+diagnoses(SD, Comp, OBS, Diagnoses) :-
+  tp(SD, Comp, OBS, [], CS),
+  makeHittingTree(CS, [], Tree),
+  gatherMinimalDiagnoses(Tree, Diagnoses).
