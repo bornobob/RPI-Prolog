@@ -35,10 +35,9 @@ nnodes2c(node(X, Y, _), N) :-
 % -------------- 2.d -------------- %
 
 makeBinary(N, Tree) :- 
-	N = 0,
+	N == 0, !,
 	Tree = leaf(0).
 makeBinary(N, Tree) :- 
-	N > 0,
 	NewN is N-1,
 	makeBinary(NewN, R1),
 	Tree = node(R1, R1, N).
@@ -50,10 +49,9 @@ repl(X, N, L) :-
     maplist(=(X), L).
 
 makeTree(N, _, Tree) :- 
-	N = 0,
+	N = 0, !,
 	Tree = leaf(0).
 makeTree(N, NumberOfChildren, Tree) :-
-	N > 0,
 	NewN is N-1,
 	makeTree(NewN, NumberOfChildren, R1),
 	repl(R1, NumberOfChildren, R2),
@@ -80,12 +78,7 @@ subset(A, [B1|B2]) :-
 path(From, From, _, Visited, Path) :-
 	append(Visited, [From], Path).
 path(From, To, Graph, Visited, Path) :-
-	member(edge(From, Z), Graph),
-	\+ member(Z, Visited),
-	append(Visited, [From], A2),
-	path(Z, To, Graph, A2, Path).
-path(From, To, Graph, Visited, Path) :-
-	member(edge(Z, From), Graph),
+	(member(edge(From, Z), Graph) ; member(edge(Z, From), Graph)),
 	\+ member(Z, Visited),
 	append(Visited, [From], A2),
 	path(Z, To, Graph, A2, Path).
