@@ -80,7 +80,12 @@ subset(A, [B1|B2]) :-
 path(From, From, _, Visited, Path) :-
 	append(Visited, [From], Path).
 path(From, To, Graph, Visited, Path) :-
-	member(edge(From, Z) ; edge(Z, From), Graph),
+	member(edge(From, Z), Graph),
+	\+ member(Z, Visited),
+	append(Visited, [From], A2),
+	path(Z, To, Graph, A2, Path).
+path(From, To, Graph, Visited, Path) :-
+	member(edge(Z, From), Graph),
 	\+ member(Z, Visited),
 	append(Visited, [From], A2),
 	path(Z, To, Graph, A2, Path).
